@@ -1,7 +1,7 @@
 // Here, global variables are defined
 # define N 100
 // int N = 100;
-double dt = 0.001;
+double dt = 0.00001;
 int nsteps_max = 8000;
 double L = 1.0;
 double kcond = 1.0;
