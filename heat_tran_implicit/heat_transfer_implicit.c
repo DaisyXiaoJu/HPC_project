@@ -19,7 +19,7 @@ static char help[] = "Implicit EULER method\n\n";
 
 int main(int argc, char** argv) {
 	// allocate one dimensional array
-	//double u[N + 2], unew[N + 2], f[N];
+	double uexact[N];
 
 	//double* u = (double**)malloc(sizeof(float*) * (N + 2));
 	//for (int i = 0; i < (N + 2); i++) {
@@ -36,18 +36,19 @@ int main(int argc, char** argv) {
 	double x;
 	double dx;
 	dx = (double)L / (double)N;
+	int nsteps = (int)(tend / dt);
 	//double dy;
 	//dy = (double)L / (double)N;
-	FILE* init;
-	FILE* uout;
+	//FILE* init;
+	//FILE* uout;
 	double pi = 4.0 * atan(1.0);
-	printf("%d, %f, %f\n", N, dx, dt);
+	double coef = 1.0 / kcond / L / L / pi / pi;
+	for (int i = 0; i < (N + 1); i++) {
+		x = (i + 0.5) * dx;
+		uexact[i] = (-1) * coef * sin(L * pi * x) + coef * sin(L * pi) * x;
+		printf("%f\n", uexact[i]);
+	}
 
-	//double forward(double ujk, double ujmk, double ujpk, double ujkm, double ujkp, double x, double y);
-	//u[0] = 0.0;
-	//unew[0] = 0.0;
-	//u[N + 1] = 0.0;
-	//unew[N + 1] = 0.0;
 
 	// grid init
 	// use initial condition
@@ -74,12 +75,12 @@ int main(int argc, char** argv) {
 
 	Mat            A;
 	Vec            u, uold, f;
-	PetscInt       nlocal, rstart, rend;
-	PetscInt       n = N, maxit = 5000;
-	PetscInt	   col[3];
+	PetscInt       nlocal, rstart, rend, nstep = nsteps;
+	PetscInt       n = N;
+	PetscInt	   col[3], num[N];
 	PetscReal      temp;
 	PetscReal      norm0 = 0.0, norm1 = 1.0, tor = 1.e-8, err;
-	PetscScalar    value[3], one = 1;
+	PetscScalar    value[3], one = 1, uout[N];
 	PetscErrorCode ierr;
 	KSP		       ksp;
 
@@ -176,7 +177,7 @@ int main(int argc, char** argv) {
 	// Create the linear solver
 	ierr = KSPCreate(PETSC_COMM_WORLD, &ksp); CHKERRQ(ierr);
 
-	for (int iter = 0; iter < maxit; iter++) {
+	for (int iter = 0; iter < nstep; iter++) {
 		ierr = VecCopy(u, uold); CHKERRQ(ierr);
 		ierr = VecAXPY(uold, one, f); CHKERRQ(ierr);
 
@@ -186,15 +187,15 @@ int main(int argc, char** argv) {
 		ierr = KSPSolve(ksp, uold, u); CHKERRQ(ierr);
 
 		ierr = VecNorm(u, NORM_1, &norm1);
-		err = fabs(norm1 - norm0);
-		if (err < tor) {
+		//err = fabs(norm1 - norm0);
+		/*if (err < tor) {
 			PetscPrintf(comm, "Number of iteration is %d, err is %f\n", iter + 1, err);
 			break;
 		}
 		else {
 			PetscPrintf(comm, "Maximum iteration");
-		}
-		norm0 = norm1;
+		}*/
+		//norm0 = norm1;
 	}
 	ierr = VecView(u, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
@@ -216,6 +217,50 @@ int main(int argc, char** argv) {
 
 	//	iter = iter + 1;
 	//}
+
+
+    /* HDF5 initialization */
+    for(int i=0;i<N; i++)
+	{
+	    num[i]=i;
+	}
+	ierr = VecGetValues(u,N,num,uout); CHKERRQ(ierr);
+	ierr = PetscScalarView(n, uout, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+    hid_t        file_id, dataset_id, group_id, dataspace_id;  /* identifiers */
+    hsize_t      dims[1];
+    herr_t       status;
+    double * vec1 = (double*)malloc(N*sizeof(double));   
+    free(vec1);
+
+    /* HDF5: Create a new file to store velocity datasets. */
+    file_id = H5Fcreate("heat_trans_data.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+	dims[0] = N; 
+
+    dataspace_id = H5Screate_simple(1, dims, NULL);
+
+    /* Create two groups to store initial values and output values in the file. */
+    group_id = H5Gcreate2(file_id, "/output", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+    /* Create the datasets. */
+    dataset_id = H5Dcreate2(file_id, "/output/uout", H5T_IEEE_F64BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+
+    //  printf("original dset_data[0]:%2d\n", dset_data[0]);
+
+     /* Write the first dataset. */
+    status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, uout);
+
+     /* Close the data space for the first dataset. */
+    status = H5Sclose(dataspace_id);
+
+     /* Close the first dataset. */
+    status = H5Dclose(dataset_id);
+     /* Close the group. */
+    status = H5Gclose(group_id);
+    status = H5Fclose(file_id);
+
 
 	ierr = MatDestroy(&A); CHKERRQ(ierr);
 	ierr = VecDestroy(&u); CHKERRQ(ierr);
@@ -241,44 +286,6 @@ int main(int argc, char** argv) {
 
 	//	iter = iter + 1;
 	//}
-
-	///* HDF5 initialization */
-	//hid_t        file_id, dataset_id, group_id, dataspace_id;  /* identifiers */
-	//hsize_t      dims[2];
-	//herr_t       status;
-	//int* vec1 = (int*)malloc((N + 2) * (N + 2) * sizeof(int));
-	//free(vec1);
-
-	///* HDF5: Create a new file to store velocity datasets. */
-	//file_id = H5Fcreate("heat_trans_data.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-	//dims[0] = N + 2;
-	//dims[1] = N + 2;
-
-	//dataspace_id = H5Screate_simple(2, dims, NULL);
-
-	///* Create two groups to store initial values and output values in the file. */
-	//group_id = H5Gcreate2(file_id, "/output", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-	///* Create the datasets. */
-	//dataset_id = H5Dcreate2(file_id, "/output/uout", H5T_STD_I32BE, dataspace_id,
-	//	H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-
-	//  printf("original dset_data[0][0][0]:%2d\n", dset_data[0][0][0]);
-
-	// /* Write the first dataset. */
-	//status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
-	//	u);
-
-	///* Close the data space for the first dataset. */
-	//status = H5Sclose(dataspace_id);
-
-	///* Close the first dataset. */
-	//status = H5Dclose(dataset_id);
-	///* Close the group. */
-	//status = H5Gclose(group_id);
-	//status = H5Fclose(file_id);
 
 	return 0;
 }
