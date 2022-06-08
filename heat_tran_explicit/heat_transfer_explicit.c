@@ -77,10 +77,10 @@ int main(int argc, char** argv) {
 	Vec            u, uold, f;
 	PetscInt       nlocal, rstart, rend;
 	PetscInt       n = N, maxit = 5000;
-	PetscInt	   col[3];
+	PetscInt	   col[3], num[N];
 	PetscReal      temp;
 	PetscReal      norm0 = 0.0, norm1 = 1.0, tor = 1.e-8, err;
-	PetscScalar    value[3];
+	PetscScalar    value[3], uout[N];
 	PetscErrorCode ierr;
 
 	ierr = PetscInitialize(&argc, &argv, (char*)0, help); if (ierr) return ierr;
@@ -204,73 +204,57 @@ int main(int argc, char** argv) {
 	//	iter = iter + 1;
 	//}
 
+
+
+/* HDF5 initialization */
+    for(int i=0;i<N; i++)
+	{
+	    num[i]=i;
+	}
+	ierr = VecGetValues(u,N,num,uout); CHKERRQ(ierr);
+	ierr = PetscScalarView(n, uout, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+    hid_t        file_id, dataset_id, group_id, dataspace_id;  /* identifiers */
+    hsize_t      dims[1];
+    herr_t       status;
+    double * vec1 = (double*)malloc(N*sizeof(double));   
+    free(vec1);
+
+    /* HDF5: Create a new file to store velocity datasets. */
+    file_id = H5Fcreate("heat_trans_data.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+	dims[0] = N; 
+
+    dataspace_id = H5Screate_simple(1, dims, NULL);
+
+    /* Create two groups to store initial values and output values in the file. */
+    group_id = H5Gcreate2(file_id, "/output", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+    /* Create the datasets. */
+    dataset_id = H5Dcreate2(file_id, "/output/uout", H5T_IEEE_F64BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+
+    //  printf("original dset_data[0]:%2d\n", dset_data[0]);
+
+     /* Write the first dataset. */
+    status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, uout);
+
+     /* Close the data space for the first dataset. */
+    status = H5Sclose(dataspace_id);
+
+     /* Close the first dataset. */
+    status = H5Dclose(dataset_id);
+     /* Close the group. */
+    status = H5Gclose(group_id);
+    status = H5Fclose(file_id);
+
+
 	ierr = MatDestroy(&A); CHKERRQ(ierr);
 	ierr = VecDestroy(&u); CHKERRQ(ierr);
 	ierr = VecDestroy(&uold); CHKERRQ(ierr);
 	ierr = VecDestroy(&f); CHKERRQ(ierr);
 	ierr = PetscFinalize(); CHKERRQ(ierr);
 
-	/* HDF5 initialization */
-	//hid_t        file_id, dataset_id, group_id, dataspace_id;  /* identifiers */
-	//hsize_t      dims[2];
-	//herr_t       status;
-	//int* vec1 = (int*)malloc((N + 2) * (N + 2) * sizeof(int));
-	//free(vec1);
-
-	///* HDF5: Create a new file to store velocity datasets. */
-	//file_id = H5Fcreate("heat_trans_data.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-	//dims[0] = N + 2;
-	//dims[1] = N + 2;
-
-	//dataspace_id = H5Screate_simple(2, dims, NULL);
-
-	///* Create two groups to store initial values and output values in the file. */
-	//group_id = H5Gcreate2(file_id, "/output", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-	///* Create the datasets. */
-	//dataset_id = H5Dcreate2(file_id, "/output/uout", H5T_STD_I32BE, dataspace_id,
-	//	H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-
-	//  printf("original dset_data[0][0][0]:%2d\n", dset_data[0][0][0]);
-
-	// /* Write the first dataset. */
-	//status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
-	//	u);
-
-	///* Close the data space for the first dataset. */
-	//status = H5Sclose(dataspace_id);
-
-	///* Close the first dataset. */
-	//status = H5Dclose(dataset_id);
-	///* Close the group. */
-	//status = H5Gclose(group_id);
-	//status = H5Fclose(file_id);
-
 	return 0;
 }
 
-
-// eulersch function
-//double forward(double ujk, double ujmk, double ujpk, double ujkm, double ujkp, double x, double y) {
-//	double u1, u2;
-//	double ujknew;
-//	double dt;
-//	double f;
-//
-//	dt = Tend / (double)nsteps;
-//	double dx;
-//	dx = (double)L / (double)N;
-//	double dy;
-//	dy = (double)L / (double)N;
-//	double pi = 4.0 * atan(1.0);
-//
-//	double CFL1 = kcond * dt / (dx * dx);
-//	double CFL2 = kcond * dt / (dy * dy);
-//	f = sin(L * pi * (x + y));
-//	u1 = CFL1 * (ujpk - 2 * ujk + ujmk);
-//	u2 = CFL2 * (ujkp - 2 * ujk + ujkm);
-//	ujknew = ujk + 1 / (rho * c) * (f + u1 + u2);
-//	return ujknew;
-//}
