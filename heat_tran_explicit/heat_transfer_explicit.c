@@ -18,8 +18,8 @@
 static char help[] = "Explicit EULER method\n\n";
 
 int main(int argc, char** argv) {
+	
 	// allocate one dimensional array
-	double uexact[N];
 
 	//double* u = (double**)malloc(sizeof(float*) * (N + 2));
 	//for (int i = 0; i < (N + 2); i++) {
@@ -33,43 +33,30 @@ int main(int argc, char** argv) {
 	//for (int i = 0; i < (N); i++) {
 	//	f[i] = (double*)malloc(sizeof(double) * (N));
 	//}
+
+	int    nsteps = (int)(tend / dt);
+	double pi = 4.0 * atan(1.0);
 	double x;
 	double dx;
 	dx = (double)L / (double)N;
-	int nsteps = (int)(tend / dt);
-	//double dy;
-	//dy = (double)L / (double)N;
-	// FILE* init;
-	// FILE* uout;
-	double pi = 4.0 * atan(1.0);
+	double CFL = dt * kcond / dx / dx / rho / c;
+	int    ii;
+	double uexact[N];
 	double coef = 1.0 / kcond / L / L / pi / pi;
-	for (int i = 0; i < (N + 1); i++) {
-		x = (i + 0.5) * dx;
-		uexact[i] = coef * sin(L * pi * x) +(-1.0) * coef * sin(L * pi) * x;
-		printf("%f\n", uexact[i]);
-	}
 
+	/* HDF5: Initialization */
+	hid_t        file_id, dataset_id1, dataset_id2, group_id, dataspace_id1, dataspace_id2;  /* identifiers */
+    hsize_t      dim1[1],dim2[1];
+    herr_t       status;
+    double * vec1 = (double*)malloc(N*sizeof(double));  
+	double * vec2 = (double*)malloc(3*sizeof(double));  
+    free(vec1);
+	free(vec2);
 
-	// grid init
-	// use initial condition
-	// for (int i = 1; i < (N + 1); i++) {
-	//	x = (i - 0.5) * dx;
-	//	u[i] = exp(x);
-	//}
+	dim1[0] = N; 
+	dim2[0] = 3; 
 
-	// use boundary conditions
-	//u[0] = g;
-	//u[N + 1] = g;
-	
-	// test code
-	//init = fopen("init.csv", "w+");
-	//for (int i = 0; i < (N + 2); i++) {
-	//	x = (i - 0.5) * dx;
-	//	fprintf(init, "%f, %f\n", x, u[i]);
-	//}
-	//fclose(init);
-
-	// Petsc Part
+	/* Petsc: Initialization */
 	MPI_Comm       comm;
 	PetscMPIInt    rank;
 
@@ -79,9 +66,11 @@ int main(int argc, char** argv) {
 	PetscInt       n = N;
 	PetscInt	   col[3], num[N];
 	PetscReal      temp;
-	PetscReal      norm0 = 0.0, norm1 = 1.0, tor = 1.e-8, err;
-	PetscScalar    value[3], uout[N];
+	PetscReal      norm0 = 0.0, norm1 = 1.0, tor = 1.e-8, err, t=0.0;
+	PetscScalar    value[3], uout[N], para[3];
 	PetscErrorCode ierr;
+
+	// Petsc Part
 
 	ierr = PetscInitialize(&argc, &argv, (char*)0, help); if (ierr) return ierr;
 
@@ -96,11 +85,14 @@ int main(int argc, char** argv) {
 	ierr = VecCreate(PETSC_COMM_WORLD, &u); CHKERRQ(ierr);
 	ierr = VecSetSizes(u, PETSC_DECIDE, n); CHKERRQ(ierr);
 	ierr = VecSetFromOptions(u); CHKERRQ(ierr);
+
 	/* Identify the starting and ending mesh points on each
     processor for the interior part of the mesh. We let PETSc decide
     above. */
 	ierr = VecGetOwnershipRange(u, &rstart, &rend); CHKERRQ(ierr);
 	ierr = VecGetLocalSize(u, &nlocal); CHKERRQ(ierr);
+	ierr = VecDuplicate(u, &uold); CHKERRQ(ierr);
+	ierr = VecDuplicate(u, &f); CHKERRQ(ierr);
 
 	/*
     Create matrix.  When using MatCreate(), the matrix format can
@@ -121,8 +113,7 @@ int main(int argc, char** argv) {
 	ierr = MatSetUp(A); CHKERRQ(ierr);
 
 	// Set values to A
-	double CFL = dt * kcond / dx / dx / rho / c;
-	int ii;
+
 	if (!rstart)
 	{
 		rstart = 1;
@@ -147,18 +138,6 @@ int main(int argc, char** argv) {
 	ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatView(A, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-	// Set values to u
-	ierr = VecGetOwnershipRange(u, &rstart, &rend); CHKERRQ(ierr);
-	for (int i = rstart; i < rend; i++) {
-		temp = exp(((double)i - 0.5) * dx);
-		ierr = VecSetValue(u, i, temp, INSERT_VALUES); CHKERRQ(ierr);
-	}
-	ierr = VecAssemblyBegin(u); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(u); CHKERRQ(ierr);
-	ierr = VecView(u, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-	ierr = VecDuplicate(u, &uold); CHKERRQ(ierr);
-	ierr = VecDuplicate(u, &f); CHKERRQ(ierr);
-	
 	// Set values to f
 	ierr = VecGetOwnershipRange(f, &rstart, &rend); CHKERRQ(ierr);
 	for (int i = rstart; i < rend; i++)
@@ -169,6 +148,137 @@ int main(int argc, char** argv) {
 	ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
 	ierr = VecView(f, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+
+	/* restart=true: status=restart
+	   restart=false:status=first run*/
+	bool   restart = true;
+
+	if (restart == false)
+	{
+		
+    	/* HDF5: Create a new file to store datasets. */
+    	file_id = H5Fcreate(FILE2, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+		/* HDF5: data1-output velocity
+		         data2-parameters:t, dt, N */
+    	dataspace_id1 = H5Screate_simple(1, dim1, NULL);
+		dataspace_id2 = H5Screate_simple(1, dim2, NULL);
+
+    	/* Create two groups to store initial values and output values in the file. */
+    	group_id = H5Gcreate2(file_id, "/output", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+    	/* Create the datasets. */
+    	dataset_id1 = H5Dcreate2(file_id, "/output/uout", H5T_IEEE_F64BE, dataspace_id1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		dataset_id2 = H5Dcreate2(file_id, "/output/parameters", H5T_IEEE_F64BE, dataspace_id2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+		para[0] = t;
+		para[1] = dt;
+		para[2] = n;
+
+		// Set values to u
+		ierr = VecGetOwnershipRange(u, &rstart, &rend); CHKERRQ(ierr);
+		for (int i = rstart; i < rend; i++) {
+			temp = exp(((double)i - 0.5) * dx);
+			ierr = VecSetValue(u, i, temp, INSERT_VALUES); CHKERRQ(ierr);
+		}
+		ierr = VecAssemblyBegin(u); CHKERRQ(ierr);
+		ierr = VecAssemblyEnd(u); CHKERRQ(ierr);
+		ierr = VecView(u, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+		/* This part is only used for verification: write initial u to hdf5*/
+    	
+		for(int i=0;i<N; i++)
+		{
+	   	 	num[i]=i;
+		}
+		ierr = VecGetValues(u,N,num,uout); CHKERRQ(ierr);
+    	status = H5Dwrite(dataset_id1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, uout);
+		status = H5Dwrite(dataset_id2, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, para);
+		
+
+	}
+
+
+	/* restart=true: status=restart
+	   restart=false:status=first run*/
+		if (restart == true)
+	{
+		
+    	/* HDF5: Open an existing file which stores datasets. */
+    	file_id = H5Fopen(FILE2, H5F_ACC_RDWR, H5P_DEFAULT);
+
+		/* HDF5: data1-output velocity
+		         data2-parameters:t, dt, N */
+
+    	/* Create two groups to store initial values and output values in the file. */
+    	group_id = H5Gopen(file_id, "/output", H5P_DEFAULT);
+
+    	/* Create the datasets. */
+    	dataset_id1 = H5Dopen(file_id, "/output/uout", H5P_DEFAULT);
+		dataset_id2 = H5Dopen(file_id, "/output/parameters", H5P_DEFAULT);
+
+		/* Write data from hdf5 to arrays */
+		status = H5Dread(dataset_id1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, uout);
+		status = H5Dread(dataset_id2, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, para);
+		ierr = PetscScalarView(n, uout, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+		ierr = PetscScalarView(3, para, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+		t = para[0];
+		dt= para[1];
+		n = para[2];
+
+		// Set values to u-from uout in hdf5
+		ierr = VecGetOwnershipRange(u, &rstart, &rend); CHKERRQ(ierr);
+		for (int i = rstart; i < rend; i++) {
+			temp = uout[i];
+			ierr = VecSetValue(u, i, temp, INSERT_VALUES); CHKERRQ(ierr);
+		}
+		ierr = VecAssemblyBegin(u); CHKERRQ(ierr);
+		ierr = VecAssemblyEnd(u); CHKERRQ(ierr);
+		ierr = VecView(u, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+		/* This part is only used for verification: write initial u to hdf5 */
+    	
+		for(int i=0;i<N; i++)
+		{
+	   	 	num[i]=i;
+		}
+		ierr = VecGetValues(u,N,num,uout); CHKERRQ(ierr);
+    	status = H5Dwrite(dataset_id1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, uout);
+		status = H5Dwrite(dataset_id2, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, para);
+		ierr = PetscScalarView(n, uout, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+		ierr = PetscScalarView(3, para, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+		
+	}
+
+
+	/* Uexact: calculation */
+	for (int i = 0; i < (N + 1); i++) {
+		x = (i + 0.5) * dx;
+		uexact[i] = coef * sin(L * pi * x) +(-1.0) * coef * sin(L * pi) * x;
+		printf("%f\n", uexact[i]);
+	}
+	/* End of uexact: calculation */
+
+	// grid init
+	// use initial condition
+	// for (int i = 1; i < (N + 1); i++) {
+	//	x = (i - 0.5) * dx;
+	//	u[i] = exp(x);
+	//}
+
+	// use boundary conditions
+	//u[0] = g;
+	//u[N + 1] = g;
+	
+	// test code
+	//init = fopen("init.csv", "w+");
+	//for (int i = 0; i < (N + 2); i++) {
+	//	x = (i - 0.5) * dx;
+	//	fprintf(init, "%f, %f\n", x, u[i]);
+	//}
+	//fclose(init);
 
 	// calculate next step
 	// forward euler scheme
@@ -206,44 +316,16 @@ int main(int argc, char** argv) {
 	//	iter = iter + 1;
 	//}
 
-    /* HDF5 initialization */
-    for(int i=0;i<N; i++)
-	{
-	    num[i]=i;
-	}
-	ierr = VecGetValues(u,N,num,uout); CHKERRQ(ierr);
-	ierr = PetscScalarView(n, uout, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
-    hid_t        file_id, dataset_id, group_id, dataspace_id;  /* identifiers */
-    hsize_t      dims[1];
-    herr_t       status;
-    double * vec1 = (double*)malloc(N*sizeof(double));   
-    free(vec1);
-
-    /* HDF5: Create a new file to store velocity datasets. */
-    file_id = H5Fcreate("heat_trans_data.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-	dims[0] = N; 
-
-    dataspace_id = H5Screate_simple(1, dims, NULL);
-
-    /* Create two groups to store initial values and output values in the file. */
-    group_id = H5Gcreate2(file_id, "/output", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-    /* Create the datasets. */
-    dataset_id = H5Dcreate2(file_id, "/output/uout", H5T_IEEE_F64BE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-
-    //  printf("original dset_data[0]:%2d\n", dset_data[0]);
-
      /* Write the first dataset. */
-    status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, uout);
+    //status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, uout);
 
      /* Close the data space for the first dataset. */
-    status = H5Sclose(dataspace_id);
+    status = H5Sclose(dataspace_id1);
+	status = H5Sclose(dataspace_id2);
 
      /* Close the first dataset. */
-    status = H5Dclose(dataset_id);
+    status = H5Dclose(dataset_id1);
+	status = H5Dclose(dataset_id2);
      /* Close the group. */
     status = H5Gclose(group_id);
     status = H5Fclose(file_id);
