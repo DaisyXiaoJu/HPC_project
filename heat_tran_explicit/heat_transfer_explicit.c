@@ -3,7 +3,7 @@
 // Explicit Euler scheme for the time discretization
 // Finite difference method for the spatial discretization
 // Use HDF5 to store output data
-//
+// 
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -19,7 +19,7 @@ static char help[] = "Explicit EULER method\n\n";
 
 int main(int argc, char** argv) {
 	// allocate one dimensional array
-	// double u[N + 2], unew[N + 2], f[N];
+	double uexact[N];
 
 	//double* u = (double**)malloc(sizeof(float*) * (N + 2));
 	//for (int i = 0; i < (N + 2); i++) {
@@ -36,18 +36,19 @@ int main(int argc, char** argv) {
 	double x;
 	double dx;
 	dx = (double)L / (double)N;
+	int nsteps = (int)(tend / dt);
 	//double dy;
 	//dy = (double)L / (double)N;
 	// FILE* init;
 	// FILE* uout;
 	double pi = 4.0 * atan(1.0);
-	// printf("%d, %f, %f\n", N, dx, dt);
+	double coef = 1.0 / kcond / L / L / pi / pi;
+	for (int i = 0; i < (N + 1); i++) {
+		x = (i + 0.5) * dx;
+		uexact[i] = coef * sin(L * pi * x) +(-1.0) * coef * sin(L * pi) * x;
+		printf("%f\n", uexact[i]);
+	}
 
-	//double forward(double ujk, double ujmk, double ujpk, double ujkm, double ujkp, double x, double y);
-	//u[0] = 0.0;
-	//unew[0] = 0.0;
-	//u[N + 1] = 0.0;
-	//unew[N + 1] = 0.0;
 
 	// grid init
 	// use initial condition
@@ -68,15 +69,14 @@ int main(int argc, char** argv) {
 	//}
 	//fclose(init);
 
-
 	// Petsc Part
 	MPI_Comm       comm;
 	PetscMPIInt    rank;
 
 	Mat            A;
 	Vec            u, uold, f;
-	PetscInt       nlocal, rstart, rend;
-	PetscInt       n = N, maxit = 5000;
+	PetscInt       nlocal, rstart, rend, nstep = nsteps;
+	PetscInt       n = N;
 	PetscInt	   col[3], num[N];
 	PetscReal      temp;
 	PetscReal      norm0 = 0.0, norm1 = 1.0, tor = 1.e-8, err;
@@ -172,19 +172,21 @@ int main(int argc, char** argv) {
 
 	// calculate next step
 	// forward euler scheme
-	for (int iter = 0; iter < maxit; iter++) {
+	for (int iter = 0; iter < nstep; iter++) {
 		ierr = VecCopy(u, uold); CHKERRQ(ierr);
 		ierr = MatMultAdd(A, uold, f, u); CHKERRQ(ierr);
 		ierr = VecNorm(u, NORM_1, &norm1);
-		err = fabs(norm1 - norm0);
-		if (err < tor) {
-			PetscPrintf(comm, "Number of iteration is %d, err is %f\n", iter + 1, err);
-			break;
-		}
-		norm0 = norm1;
+		//err = fabs(norm1 - norm0);
+		//if (err < tor) {
+		//	PetscPrintf(comm, "Number of iteration is %d, err is %f\n", iter + 1, err);
+		//	break;
+		//}
+		//norm0 = norm1;
 	}
 	ierr = VecView(u, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+	
+	
 	// output
 	// change as your needs (here, I print out t~=0.01)
 	// demo ver with csv file, should change with HDF5!!!
@@ -204,9 +206,7 @@ int main(int argc, char** argv) {
 	//	iter = iter + 1;
 	//}
 
-
-
-/* HDF5 initialization */
+    /* HDF5 initialization */
     for(int i=0;i<N; i++)
 	{
 	    num[i]=i;
@@ -258,3 +258,26 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
+
+// eulersch function
+//double forward(double ujk, double ujmk, double ujpk, double ujkm, double ujkp, double x, double y) {
+//	double u1, u2;
+//	double ujknew;
+//	double dt;
+//	double f;
+//
+//	dt = Tend / (double)nsteps;
+//	double dx;
+//	dx = (double)L / (double)N;
+//	double dy;
+//	dy = (double)L / (double)N;
+//	double pi = 4.0 * atan(1.0);
+//
+//	double CFL1 = kcond * dt / (dx * dx);
+//	double CFL2 = kcond * dt / (dy * dy);
+//	f = sin(L * pi * (x + y));
+//	u1 = CFL1 * (ujpk - 2 * ujk + ujmk);
+//	u2 = CFL2 * (ujkp - 2 * ujk + ujkm);
+//	ujknew = ujk + 1 / (rho * c) * (f + u1 + u2);
+//	return ujknew;
+//}
