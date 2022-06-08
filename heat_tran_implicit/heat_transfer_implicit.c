@@ -1,6 +1,6 @@
 // Finite-difference method to slove 1D heat transfer problem
 // Square of dimension 1 by 1
-// Explicit Euler scheme for the time discretization
+// Implicit Euler scheme for the time discretization
 // Finite difference method for the spatial discretization
 // Use HDF5 to store output data
 //
@@ -15,11 +15,11 @@
 #include "hdf5.h"
 #define FILE2 "heat_trans_data.h5"
 
-static char help[] = "Explicit EULER method\n\n";
+static char help[] = "Implicit EULER method\n\n";
 
 int main(int argc, char** argv) {
 	// allocate one dimensional array
-	// double u[N + 2], unew[N + 2], f[N];
+	//double u[N + 2], unew[N + 2], f[N];
 
 	//double* u = (double**)malloc(sizeof(float*) * (N + 2));
 	//for (int i = 0; i < (N + 2); i++) {
@@ -38,10 +38,10 @@ int main(int argc, char** argv) {
 	dx = (double)L / (double)N;
 	//double dy;
 	//dy = (double)L / (double)N;
-	// FILE* init;
-	// FILE* uout;
+	FILE* init;
+	FILE* uout;
 	double pi = 4.0 * atan(1.0);
-	// printf("%d, %f, %f\n", N, dx, dt);
+	printf("%d, %f, %f\n", N, dx, dt);
 
 	//double forward(double ujk, double ujmk, double ujpk, double ujkm, double ujkp, double x, double y);
 	//u[0] = 0.0;
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
 	// grid init
 	// use initial condition
-	// for (int i = 1; i < (N + 1); i++) {
+	//for (int i = 1; i < (N + 1); i++) {
 	//	x = (i - 0.5) * dx;
 	//	u[i] = exp(x);
 	//}
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 	// use boundary conditions
 	//u[0] = g;
 	//u[N + 1] = g;
-	
+
 	// test code
 	//init = fopen("init.csv", "w+");
 	//for (int i = 0; i < (N + 2); i++) {
@@ -67,7 +67,6 @@ int main(int argc, char** argv) {
 	//	fprintf(init, "%f, %f\n", x, u[i]);
 	//}
 	//fclose(init);
-
 
 	// Petsc Part
 	MPI_Comm       comm;
@@ -80,8 +79,9 @@ int main(int argc, char** argv) {
 	PetscInt	   col[3];
 	PetscReal      temp;
 	PetscReal      norm0 = 0.0, norm1 = 1.0, tor = 1.e-8, err;
-	PetscScalar    value[3];
+	PetscScalar    value[3], one = 1;
 	PetscErrorCode ierr;
+	KSP		       ksp;
 
 	ierr = PetscInitialize(&argc, &argv, (char*)0, help); if (ierr) return ierr;
 
@@ -97,21 +97,21 @@ int main(int argc, char** argv) {
 	ierr = VecSetSizes(u, PETSC_DECIDE, n); CHKERRQ(ierr);
 	ierr = VecSetFromOptions(u); CHKERRQ(ierr);
 	/* Identify the starting and ending mesh points on each
-    processor for the interior part of the mesh. We let PETSc decide
-    above. */
+	processor for the interior part of the mesh. We let PETSc decide
+	above. */
 	ierr = VecGetOwnershipRange(u, &rstart, &rend); CHKERRQ(ierr);
 	ierr = VecGetLocalSize(u, &nlocal); CHKERRQ(ierr);
 
 	/*
-    Create matrix.  When using MatCreate(), the matrix format can
-    be specified at runtime.
+	Create matrix.  When using MatCreate(), the matrix format can
+	be specified at runtime.
 
-    Performance tuning note:  For problems of substantial size,
-    preallocation of matrix memory is crucial for attaining good
-    performance. See the matrix chapter of the users manual for details.
+	Performance tuning note:  For problems of substantial size,
+	preallocation of matrix memory is crucial for attaining good
+	performance. See the matrix chapter of the users manual for details.
 
-    We pass in nlocal as the "local" size of the matrix to force it
-    to have the same parallel layout as the vector created above.
+	We pass in nlocal as the "local" size of the matrix to force it
+	to have the same parallel layout as the vector created above.
 	*/
 	// Create coefs matrix A
 	ierr = MatCreate(PETSC_COMM_WORLD, &A); CHKERRQ(ierr);
@@ -126,18 +126,18 @@ int main(int argc, char** argv) {
 	if (!rstart)
 	{
 		rstart = 1;
-		ii = 0; col[0] = 0; col[1] = 1; value[0] = 1.0 - 2.0 * CFL; value[1] = CFL;
+		ii = 0; col[0] = 0; col[1] = 1; value[0] = 1.0 + 2.0 * CFL; value[1] = (-1) * CFL;
 		ierr = MatSetValues(A, 1, &ii, 2, col, value, INSERT_VALUES); CHKERRQ(ierr);
 	}
 	if (rend == n)
 	{
 		rend = n - 1;
-		ii = n - 1; col[0] = n - 2; col[1] = n - 1; value[0] = CFL; value[1] = 1.0 - 2.0 * CFL;
+		ii = n - 1; col[0] = n - 2; col[1] = n - 1; value[0] = (-1) * CFL; value[1] = 1.0 + 2.0 * CFL;
 		ierr = MatSetValues(A, 1, &ii, 2, col, value, INSERT_VALUES); CHKERRQ(ierr);
-	}	
-	value[0] = CFL;
-	value[1] = 1.0 - 2.0 * CFL;
-	value[2] = CFL;
+	}
+	value[0] = (-1) * CFL;
+	value[1] = 1.0 + 2.0 * CFL;
+	value[2] = (-1) * CFL;
 	for (int i = rstart; i < rend; i++) {
 		col[0] = i - 1; col[1] = i; col[2] = i + 1;
 		MatSetValues(A, 1, &i, 3, col, value, INSERT_VALUES);
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
 	ierr = VecView(u, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 	ierr = VecDuplicate(u, &uold); CHKERRQ(ierr);
 	ierr = VecDuplicate(u, &f); CHKERRQ(ierr);
-	
+
 	// Set values to f
 	ierr = VecGetOwnershipRange(f, &rstart, &rend); CHKERRQ(ierr);
 	for (int i = rstart; i < rend; i++)
@@ -171,15 +171,28 @@ int main(int argc, char** argv) {
 	ierr = VecView(f, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
 	// calculate next step
-	// forward euler scheme
+	// backward euler scheme
+	// 
+	// Create the linear solver
+	ierr = KSPCreate(PETSC_COMM_WORLD, &ksp); CHKERRQ(ierr);
+
 	for (int iter = 0; iter < maxit; iter++) {
 		ierr = VecCopy(u, uold); CHKERRQ(ierr);
-		ierr = MatMultAdd(A, uold, f, u); CHKERRQ(ierr);
+		ierr = VecAXPY(uold, one, f); CHKERRQ(ierr);
+
+		ierr = KSPSetOperators(ksp, A, A); CHKERRQ(ierr);
+		ierr = KSPSetTolerances(ksp, 1.e-2 / n, 1.e-50, PETSC_DEFAULT, PETSC_DEFAULT); CHKERRQ(ierr);
+		ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+		ierr = KSPSolve(ksp, uold, u); CHKERRQ(ierr);
+
 		ierr = VecNorm(u, NORM_1, &norm1);
 		err = fabs(norm1 - norm0);
 		if (err < tor) {
 			PetscPrintf(comm, "Number of iteration is %d, err is %f\n", iter + 1, err);
 			break;
+		}
+		else {
+			PetscPrintf(comm, "Maximum iteration");
 		}
 		norm0 = norm1;
 	}
@@ -210,7 +223,26 @@ int main(int argc, char** argv) {
 	ierr = VecDestroy(&f); CHKERRQ(ierr);
 	ierr = PetscFinalize(); CHKERRQ(ierr);
 
-	/* HDF5 initialization */
+	// output
+	// change as your needs (here, I print out t~=0.01)
+	// demo ver with csv file, should change with HDF5!!!
+	// still have problems here, should u get higher constantly in this BCs ?!!!
+	//	if (iter == (int)(0.01 / dt)) {
+	//		uout = fopen("uout.csv", "w+");
+	//		for (int j = 0; j < (N + 2); j++) {
+	//			y = (j - 0.5) * dy;
+	//			for (int i = 0; i < (N + 2); i++) {
+	//				x = (i - 0.5) * dx;
+	//				fprintf(uout, "%f,%f,%f\n", x, y, u[i][j]);
+	//			}
+	//		}
+	//		fclose(uout);
+	//	}
+
+	//	iter = iter + 1;
+	//}
+
+	///* HDF5 initialization */
 	//hid_t        file_id, dataset_id, group_id, dataspace_id;  /* identifiers */
 	//hsize_t      dims[2];
 	//herr_t       status;
