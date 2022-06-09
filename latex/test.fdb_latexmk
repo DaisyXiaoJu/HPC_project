@@ -1,10 +1,13 @@
 # Fdb version 3
-["xdvipdfmx"] 1654758480 "test.xdv" "test.pdf" "test" 1654758481
-  "test.xdv" 1654758480 11500 afb12cca4286427b734a66109a92b73c "xelatex"
+["xdvipdfmx"] 1654770603 "test.xdv" "test.pdf" "test" 1654770604
+  "test.xdv" 1654770603 37424 c70dcc156274023ce6e07f9685485689 "xelatex"
   (generated)
   "test.pdf"
-["xelatex"] 1654758474 "test.tex" "test.xdv" "test" 1654758481
+["xelatex"] 1654770597 "test.tex" "test.xdv" "test" 1654770604
   "c:/texlive/2021/texmf-dist/fonts/map/fontname/texfonts.map" 1634737977 3524 cb3e574dea2d1052e39280babc910dc8 ""
+  "c:/texlive/2021/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1634737369 1004 54797486969f23fa377b128694d548df ""
+  "c:/texlive/2021/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex8.tfm" 1634737369 988 bdf658c3bfc2d96d3c8b02cfc1c94c20 ""
+  "c:/texlive/2021/texmf-dist/fonts/tfm/public/cm/cmex10.tfm" 1634737627 992 662f679a0b3d2d53c1b94050fdaa3f50 ""
   "c:/texlive/2021/texmf-dist/fonts/tfm/public/cm/cmmi10.tfm" 1634737627 1528 abec98dbc43e172678c11b3b9031252a ""
   "c:/texlive/2021/texmf-dist/fonts/tfm/public/cm/cmmi12.tfm" 1634737627 1524 4414a8315f39513458b80dfc63bff03a ""
   "c:/texlive/2021/texmf-dist/fonts/tfm/public/cm/cmmi6.tfm" 1634737627 1512 f21f83efb36853c0b70002322c1ab3ad ""
@@ -16,6 +19,11 @@
   "c:/texlive/2021/texmf-dist/fonts/tfm/public/cm/cmsy10.tfm" 1634737627 1124 6c73e740cf17375f03eec0ee63599741 ""
   "c:/texlive/2021/texmf-dist/fonts/tfm/public/cm/cmsy6.tfm" 1634737627 1116 933a60c408fc0a863a92debe84b2d294 ""
   "c:/texlive/2021/texmf-dist/fonts/tfm/public/cm/cmsy8.tfm" 1634737627 1120 8b7d695260f3cff42e636090a8002094 ""
+  "c:/texlive/2021/texmf-dist/tex/latex/amsmath/amsbsy.sty" 1634737371 2211 ca7ce284ab93c8eecdc6029dc5ccbd73 ""
+  "c:/texlive/2021/texmf-dist/tex/latex/amsmath/amsgen.sty" 1634737371 4161 7f6eb9092061a11f87d08ed13515b48d ""
+  "c:/texlive/2021/texmf-dist/tex/latex/amsmath/amsmath.sty" 1634737371 87353 2c21ff5f2e32e1bf714e600924d810db ""
+  "c:/texlive/2021/texmf-dist/tex/latex/amsmath/amsopn.sty" 1634737371 4116 32e6abd27229755a83a8b7f18e583890 ""
+  "c:/texlive/2021/texmf-dist/tex/latex/amsmath/amstext.sty" 1634737371 2432 8ff93b1137020e8f21930562a874ae66 ""
   "c:/texlive/2021/texmf-dist/tex/latex/base/article.cls" 1634738265 20145 aad8c3dd3bc36e260347b84002182bc2 ""
   "c:/texlive/2021/texmf-dist/tex/latex/base/fix-cm.sty" 1634738265 14742 0d173bd349a3411c545b594a97fb0700 ""
   "c:/texlive/2021/texmf-dist/tex/latex/base/fontenc.sty" 1634738265 4947 8cb7717f0cc771eca0fda15160c7fee9 ""
@@ -37,6 +45,12 @@
   "c:/texlive/2021/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty" 1634737982 163300 4d3d778e38973f06a2524732dbbc580f ""
   "c:/texlive/2021/texmf-dist/tex/latex/fontspec/fontspec.cfg" 1634737982 549 c4adac819276241fea8eb79c5ab7b99e ""
   "c:/texlive/2021/texmf-dist/tex/latex/fontspec/fontspec.sty" 1634737982 1655 a1ec6f2670a260de25415d37e9c60e97 ""
+  "c:/texlive/2021/texmf-dist/tex/latex/graphics-cfg/graphics.cfg" 1634738060 1224 978390e9c2234eab29404bc21b268d1e ""
+  "c:/texlive/2021/texmf-dist/tex/latex/graphics-def/xetex.def" 1634738061 15263 06bfc49e20bdfcb827e011063ecb4ae6 ""
+  "c:/texlive/2021/texmf-dist/tex/latex/graphics/graphics.sty" 1634738060 18272 a8c6a275b34ab6717ceeb8fa04b104e2 ""
+  "c:/texlive/2021/texmf-dist/tex/latex/graphics/graphicx.sty" 1634738060 7919 20fdfdd783821971c55bc8ee918cbe63 ""
+  "c:/texlive/2021/texmf-dist/tex/latex/graphics/keyval.sty" 1634738060 2590 e3b24ff953e5b58d924f163d25380312 ""
+  "c:/texlive/2021/texmf-dist/tex/latex/graphics/trig.sty" 1634738060 3976 d7fa7d81d2870d509d25b17d0245e735 ""
   "c:/texlive/2021/texmf-dist/tex/latex/hyperref/hyperref.sty" 1634738126 230839 177eac084bda18ae827a77792a17292e ""
   "c:/texlive/2021/texmf-dist/tex/latex/l3backend/l3backend-xetex.def" 1634738252 34666 58d292eee7df5fb43d9818e3e84b305d ""
   "c:/texlive/2021/texmf-dist/tex/latex/l3kernel/expl3.sty" 1634738255 6208 7497703c7e95fb22a69d3ed6f9024046 ""
@@ -53,11 +67,11 @@
   "c:/texlive/2021/texmf-dist/web2c/texmf.cnf" 1634738241 39972 3d6bb4d9d719e93193fa020b58adf5d4 ""
   "c:/texlive/2021/texmf-var/web2c/xetex/xelatex.fmt" 1634739672 5093732 d84daa61781b6e87b4f2dcb58fa059c0 ""
   "c:/texlive/2021/texmf.cnf" 1634739539 713 e69b156964470283e0530f5060668171 ""
-  "test.aux" 1654758480 655 dc7c311b6e652282a47e41c7fbd6cac8 "xelatex"
-  "test.tex" 1654758473 2333 be2af3a0e3ee3c52b4144f9f0ca6b853 ""
-  "test.toc" 1654758480 377 ff6ad8902bb5b8dc1ab7e9d931c26535 "xelatex"
+  "test.aux" 1654770603 655 1fa24fd6063bf3955eab0f199f53f349 "xelatex"
+  "test.tex" 1654770596 9415 3ec43bc82a8ef52f560f919dd6c5b0c4 ""
+  "test.toc" 1654770603 377 3be42a55a441c2741a20fc3fbcaee392 "xelatex"
   (generated)
+  "test.aux"
+  "test.log"
   "test.toc"
   "test.xdv"
-  "test.log"
-  "test.aux"

@@ -1,5 +1,7 @@
 \documentclass{article}
 \usepackage[UTF8]{ctex}
+\usepackage{amsmath}
+\usepackage{graphicx}
 
 %要运行该模板，LaTex需要安装CJK库以支持汉字.
 %字体大小为12像素，文档类型为article
@@ -26,36 +28,216 @@
 		%再插入目录
 		
 		\tableofcontents   %主要的作用适用于生成目录的作用
-		
+
 		\clearpage
 		
 		\section{Problem B ：陈述}
-		考虑一维（1D）域中的热传导方程$\Omega:=(0,1)$.域的边界为$\Gamma={0,1}$.设$f$为单位体积的热源，$u$ 为温度，它是关于x和t的函数；$\rho$为密度，$c$为热容，$u_0$为初始温度，$\kappa$为传热系数，$n_x$为笛卡尔坐标系下的单位法向量.边界条件为$\Gamma_g$上规定的温度函数$g$和$\Gamma_h$上的热通量函数$h$，它们均为x和t的函数.边界$\Gamma$允许非重叠分解:$ \Gamma = \Gamma_g \cap \Gamma_h,\emptyset = \Gamma_g \cup \Gamma_h$.热传导方程可以表述如下:
-		\\
-		$
+		考虑一维（1D）域中的热传导方程$\Omega:=(0,1)$。域的边界为$\Gamma=\{0,1\}$。设$f$为单位体积的热源，$u$ 为温度，它是关于x和t的函数；$\rho$为密度，$c$为热容，$u_0$为初始温度，$\kappa$为传热系数，$n_x$为笛卡尔坐标系下的单位法向量。边界条件为$\Gamma_g$上规定的温度函数$g$和$\Gamma_h$上的热通量函数$h$，它们均为x和t的函数。边界$\Gamma$允许非重叠分解:$ \Gamma = \bar{\Gamma_g \cap \Gamma_h},\emptyset = \Gamma_g \cup \Gamma_h$。热传导方程可以表述如下:
+		$$
 		\rho c \frac{\partial u}{\partial t}-\kappa\frac{\partial^2 u}{\partial x^2}=f
-		$ \quad on $\Omega $
-		
-		
+		\quad on \quad \Omega \times (0,T)
+		 $$	
+		$$
+		u=g
+		\quad on \quad \Gamma_g \times (0,T)
+		$$
+		$$
+		\kappa \frac{\partial u}{\partial x}n_x=h
+		\quad on \quad \Gamma_h \times (0,T)
+		$$
+		$$
+		u|_{t=0}=u_0
+		\quad in \quad \Omega.
+		$$
+		考虑如下所述的边界条件，初始条件和函数：
+		$$ 
+		\left\{
+		\begin{aligned}
+			B.C.s \quad u(0,t)=u(1,t)=0 \\
+			I.C. \quad u(x,0)=e^x \\
+			f(x,t)=sin(l\pi x) \\
+			\kappa=1.0 \\
+		\end{aligned}
+		\right.
+		$$
+		其中$l=constant$，令$l=1.0$。\\
+		使用有限差分法求解该问题。利用泰勒展开公式，将方程中的偏导数项展开为差分格式的公式。如果一个差分格式每一排各节点上的数值可直接由前面各排节点的数值计算得到，则称为显示差分格式。如果一个差分格式每一排各节点的数值需要求解一个线性代数方程组同时确定，则称为隐式差分格式。在时间上采用后向差分格式，在空间上使用中心差分格式，则热传导方程的显式差分格式可以表示如下：
+		$$
+		\frac{u^{n+1}_j-u^n_j}{\Delta t}=\frac{\kappa }{\rho  c}\frac{u^{n}_{j+1}-2u^{n}_j+u^{n}_{j-1}}{{\Delta x}^2}+\frac{f}{\rho c}
+		$$
+		其中$n$为时间步,$j$为空间上的网格点。考虑时间正向积分，将所有时间步为n的项移至右侧，得到
+		$$
+		u_j^{n+1}=\frac{\kappa \Delta t}{\rho  c \Delta x^2}u^{n}_{j-1}+(1-2\frac{\kappa \Delta t}{\rho  c \Delta x^2})u^{n}_{j}+\frac{\kappa \Delta t}{\rho  c \Delta x^2}u^{n}_{j+1}+\frac{f \Delta t}{\rho c}
+		$$
+		隐式差分格式的公式
+		$$
+		\frac{u^{n+1}_j-u^n_j}{\Delta t}=\frac{\kappa }{\rho  c}\frac{u^{n+1}_{j+1}-2u^{n+1}_j+u^{n+1}_{j-1}}{{\Delta x}^2}+\frac{f}{\rho c}
+		$$
+		同样，其中$n$为时间步,$j$为空间上的网格点。考虑时间正向积分，将所有时间步为$n+1$的项移至左侧，得到
+		$$-\frac{\kappa \Delta t}{\rho c {\Delta x}^2}u^{n+1}_{j-1}+(1+2\frac{\kappa \Delta t}{\rho c {\Delta x}^2})u^{n+1}_j-\frac{\kappa \Delta t}{\rho c {\Delta x}^2}u^{n+1}_{j+1}=u^{n}_j+\frac{f\Delta t}{\rho c}
+		$$
+		令$CFL=\frac{\kappa \Delta t}{\rho  c \Delta x^2}$，在计算流体力学力学中，$CFL$是用来表征数值方程稳定性的变量。在PETSc中，我们需要使用矩阵运算功能来求解上述方程,同时由于$f$与$t$无关，所以将显示差分格式表示为矩阵形式：
+		$$
+		\begin{aligned}
+		\begin{bmatrix}
+			u_0^{n+1} \\
+			u_1^{n+1} \\
+			\vdots \\
+			u_j^{n+1} \\
+			\vdots \\
+			u_{N-1}^{n+1} \\
+		\end{bmatrix}
+		=
+		\begin{bmatrix}
+			1-2CFL & CFL & & & & \\
+			CFL & 1-2CFL & CFL & & &\\
+			 & \ddots &  \ddots & \ddots & &\\
+			 & & \ddots & \ddots & \ddots &\\
+			 & & & CFL & 1-2CFL & CFL \\
+			 & & & & CFL & 1-2CFL\\
+		\end{bmatrix}
+		\\
+		\times
+	    \begin{bmatrix}
+	    	u_0^n \\
+	    	u_1^n \\
+	    	\vdots \\
+	        u_j^n \\
+	    	\vdots \\
+	    	u_{N-1}^n \\
+	    \end{bmatrix}+
+     	\begin{bmatrix}
+    		f_0 \\
+    		f_1 \\
+    		\vdots \\
+    		f_j^n \\
+    		\vdots \\
+    		f_{N-1}^n \\
+    	\end{bmatrix}
+    	\end{aligned}
+		$$
+		其中N是网格分辨率，即节点数。同样，将隐式差分格式表示为矩阵形式：
+		$$
+		\begin{aligned}
+		\begin{bmatrix}
+			1+2CFL & -CFL & & & & \\
+			-CFL & 1+2CFL & -CFL & & &\\
+			& \ddots &  \ddots & \ddots & &\\
+			& & \ddots & \ddots & \ddots &\\
+			& & & -CFL & 1+2CFL & -CFL \\
+			& & & & -CFL & 1+2CFL\\
+		\end{bmatrix}
+		\begin{bmatrix}
+			u_0^{n+1} \\
+			u_1^{n+1} \\
+			\vdots \\
+			u_j^{n+1} \\
+			\vdots \\
+			u_{N-1}^{n+1} \\
+		\end{bmatrix}
+		\\
+		=
+		\begin{bmatrix}
+			u_0^n \\
+			u_1^n \\
+			\vdots \\
+			u_j^n \\
+			\vdots \\
+			u_{N-1}^n \\
+		\end{bmatrix}+
+		\begin{bmatrix}
+			f_0 \\
+			f_1 \\
+			\vdots \\
+			f_j^n \\
+			\vdots \\
+			f_{N-1}^n \\
+		\end{bmatrix}
+		\end{aligned}
+		$$
+		由此，我们建构了显示差分和隐式差分的迭代方程。每次迭代过程中，下一时间步的温度向量可以通过当前时间步的温度向量求解。
 		
 		\clearpage
 		
 		\section{代码构成}
 		
-		LaTex 源文件格式为普通的ASCII文件,
-		你可以使用任何文本编辑器来创建.
-		LaTex源文件不仅包括你要排版的文本, 还包括LaTex
-		所能识别的,如何排版这些文本的命令.
+		本节将通过以下几点要求描述代码各部分的功能。\\
+		0.主体:
+		\\
+		1.主体
+		
 		
 		\clearpage
 		
 		\section{代码测试}
 		\subsection{方法稳定性}
-		小节2.1
+		在该节中，利用计算流体力学相关知识，使用Von-Neumann's stability analysis(冯诺依曼稳定性分析)方法理论求解方程稳定性。对于显式差分格式：
+		$$
+		u_j^{n+1}=\frac{\kappa \Delta t}{\rho  c \Delta x^2}u^{n}_{j-1}+(1-2\frac{\kappa \Delta t}{\rho  c \Delta x^2})u^{n}_{j}+\frac{\kappa \Delta t}{\rho  c \Delta x^2}u^{n}_{j+1}+\frac{f \Delta t}{\rho c}
+		$$
+		它的舍入误差方程表示为：
+		$$
+		\delta u_j^{n+1}=(1-2CFL)\delta u_j^n + CFL(u^{n}_{j-1}+u^{n}_{j+1})
+		$$
+		冯诺依曼稳定性分析的流程如下,其中使用了欧拉公式：
+		$$
+		\delta u_j^n \sim e^{\sigma t^n}\cdot e^{i(k\cdot x_j)} \sim e^{\sigma n\Delta t}\cdot e^{i(kj\Delta x)}
+		$$
+		$$
+		e^{\sigma (n+1)\Delta t}\cdot e^{i(kj\Delta x)}=(1-2CFL)e^{\sigma n\Delta t}\cdot e^{i(kj\Delta x)} + CFL(e^{\sigma n\Delta t}\cdot e^{i(k(j-1)\Delta x)}+e^{\sigma n\Delta t}\cdot e^{i(k(j+1)\Delta x)})
+		$$
+		$$
+		e^{\sigma \Delta t}=(1-2CFL)+2CFLcos(k \Delta x)
+		$$
+		稳定要求为：
+		$$
+		|e^{\sigma \Delta t}|=|(1-2CFL)+2CFLcos(k \Delta x)|\leq 1
+		$$
+		可以推出显式方程是条件稳定的，稳定条件为：
+		$$
+		CFL \leq \frac{1}{2}
+		$$
+		而对隐式方程，有：
+		$$
+		-\frac{\kappa \Delta t}{\rho c {\Delta x}^2}u^{n+1}_{j-1}+(1+2\frac{\kappa \Delta t}{\rho c {\Delta x}^2})u^{n+1}_j-\frac{\kappa \Delta t}{\rho c {\Delta x}^2}u^{n+1}_{j+1}=u^{n}_j+\frac{f\Delta t}{\rho c}
+		$$
+		$$
+		\begin{aligned}
+		-CFLe^{\sigma (n+1)\Delta t}\cdot e^{i(k(j-1)\Delta x)}+(1+2CFL)e^{\sigma (n+1)\Delta t}\cdot e^{i(kj\Delta x)}-CFLe^{\sigma (n+1)\Delta t}\cdot e^{i(k(j+1)\Delta x)} \\
+		=e^{\sigma n\Delta t}\cdot e^{i(kj\Delta x)}
+		\end{aligned}
+		$$
+		$$
+		|e^{\sigma \Delta t}|=|\frac{1}{1+4CFLsin^2(\frac{k\Delta x}{2})}|
+		$$
+		无论CFL取任何正值，上式均不大于1，即隐式方程是无条件稳定的。
+		
 		\subsection{误差分析}
-		小节2.2
-		%在结论部分我们使用仿宋体
-		LaTeX, 我看行!
+		在该节中，首先从理论分析方程的误差阶数。不论是对于显式还是隐式格式，根据其泰勒展开式可以分析，其忽略的首项（称为截断误差）可以写为
+		$$
+		\frac{\Delta t}{2}\frac{\partial ^2u}{\partial t^2},\frac{(\Delta x)^2}{12}\frac{\partial ^4u}{\partial x^4}
+		$$
+		$$
+		truncation \quad error=O(\Delta t,(\Delta x)^2)
+		$$
+		说明显式格式和隐式格式在时间上具有一阶精度，在空间上具有二阶精度。
+		使用稳态解（即$\partial u /\partial t =0$）作为解析解计算误差$e$。当$\partial u /\partial t =0$时，原热传导方程化为：
+		$$
+		\frac{\partial^2 u}{\partial x^2}=-\frac{sin(l\pi x)}{\kappa}
+		$$
+		对其左右两式积分两次，得到
+		$$
+		u(x)=\frac{sin(l\pi x)}{(l\pi)^2\kappa}+C_1x+C_2
+		$$
+		其中$C_1,C_2$为待定常数。将边界条件代入，可以解得
+		$$
+		C_1=-\frac{sin(l\pi)}{(l\pi)^2\kappa},C_2=0
+		$$
+		故
+		$$
+		u(x)=\frac{sin(l\pi x)}{(l\pi)^2\kappa}-\frac{sin(l\pi)}{(l\pi)^2\kappa}x
+		$$
+		令$u_{exact}=u(x_j)$，定义误差为$e:=max_{1\leq j \leq n}|u_{exact,j}-u_{num,j}|$，则误差可以表达为与网格分辨率和时间步有关的函数$e \approx C_1\Delta x^{\alpha}+C_2\Delta t^{\beta}$。
 		
 		\clearpage
 		
