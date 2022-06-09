@@ -1,6 +1,6 @@
 # HPC_project
 
-1.所有commit为“Files from the old repository”的文件和文件夹均为原二维问题的文件，仅做保留用
+1.所有commit为“Files from the old repository”的文件和文件夹均为原二维问题的文件，仅做保留用 \\
 2.显式的文件保存在heat_tran_explicit文件夹中，隐式文件保存在heat_tran_implicit中，copy后输入命令：
 $ make clean
 $ make
