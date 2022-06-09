@@ -2,6 +2,7 @@
 \usepackage[UTF8]{ctex}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{booktabs}
 
 %要运行该模板，LaTex需要安装CJK库以支持汉字.
 %字体大小为12像素，文档类型为article
@@ -165,20 +166,34 @@
 		1.主体:代码主要包括3个部分，首先是全局变量，包括网格分辨率N，时间变化率$dt$等，定义在头文件global.h中并赋值；如果需要修改这些参数的值，可以在头文件中修改。第二部分是显式方法求解，位于heat\_transfer\_explicit.c文件中，主要是调用PETSc的函数计算第一章中的显式矩阵表达式，并使用时间步迭代的方式求解温度向量，并且求解了精确解，用于计算误差；第三部分是隐式方法求解，位于heat\_transfer\_implicit.c文件中，主要是调用PETSc的函数计算第一章中的隐式矩阵表达式，并使用时间步迭代的方式求解温度向量，显式和隐式的主要区别是，由于隐式需要同时求解下一时间步的不同位置的所有温度，需要求解一个矩阵方程，因此需要引入头文件petscksp.h，代码的主要结构和显式方法是相同的。
 		\\
 		2.HDF5：代码实现了使用HDF5进行进程的首次启动，关闭和重启功能。主要方法为：引入一个布尔运算符restart，当restart的值为false时，代码是首次运行，会创建一个HDF5的group，其中有两个dataset，一个用于储存计算出的温度向量$u$，另一个则用于储存参数运行时间，时间变化率，网格分辨率$t,\Delta t,N$，每次迭代都会把以上的参数写入.h5文件。当restart的值为true时，代码是重启状态，会从当前文件夹的.h5文件读入已有的上述参数，并且继续用于计算。并且在之后的每次迭代中，都会把以上的参数写入.h5文件。
+		\\测试HDF5功能：分别令终止时间$t_end=1.0,2.0$，令restart=false，运行程序，此时会获得程序运行至时间为1.0和2.0的.h5文件。第二次运行时令restart=true，将$t=1.0$的.h5文件放入文件夹再次运行程序，至$t=2.0$停止。比较两次得到的$t=2.0$的温度数据，如图1所示。可以看到二者完全吻合，说明HDF5代码是有效的。
+		\begin{figure}
+			\centering
+			\includegraphics[width=0.7\linewidth]{screenshot001}
+			\caption[]{不同状态的程序运行到同一时刻的温度值对比}
+			\label{fig:screenshot001}
+		\end{figure}
 		\\
 		3.编程过程中使用了数种防御性编程的方法，如：(1)优化排版，将变量的声明放到了程序开头，并且使用空格优化阅读体验；(2)多次使用PETSc的*View函数检视输出的数值，确保数值稳定或无误；(3)保留了足够数量的注释，用于解释每段函数或者变量的功能；(4)保留了测试用的代码，用于测试代码运行逻辑，等等。
 		\\
 		4.Makefile：对于显式隐式方法，都有一个对应的Makefile，位于相应文件夹中。可以使用make命令直接编译出可执行文件。(需要将头文件global.h和源文件heat\_transfer\_explicit.c放到同一个文件夹)
 		\\
-		5.使用Valgrind对程序进行了分析。
+		5.使用Valgrind对程序进行了分析。如图2所示，其中记录了所有函数和内存的调用，耗时比较长的是PETSc的初始化。打开HDF5文件也占用了一定的时间。这个结果是符合预期的，因为程序的主要目的就是反复迭代求解矩阵。
+		\begin{figure}
+			\centering
+			\includegraphics[width=1.0\linewidth]{screenshot002}
+			\caption{Kcachegrind程序分析}
+			\label{fig:screenshot002}
+		\end{figure}
 		\\
-		6.所有的工作进度都在github上进行了实时同步。仓库路径为:
+		6.所有的工作进度都在Github上进行了实时同步。此外所有的测试文件均位于太乙服务器的路径下(先前测试时生成的很多冗余的日志文件都进行了删除)：
+		\\
+		/work/mae-zhonghc/hpc/HPC\_project
+		\\
+		仓库路径为:
 		\\https://github.com/DaisyXiaoJu/HPC\_project
 		\\重要说明：本人原与郭琳同学合作二维项目，但是由于后来遇到了难以解决的问题（如解析解求解难度过高），所以后来放弃了二维问题，改为重写一维问题。上面链接是我的个人仓库，原合作仓库地址如下，保存了本人先前的部分工作和commits:
 		\\https://github.com/GBoy2509/HPC\_project
-		
-		
-		\clearpage
 		
 		\section{代码测试}
 		\subsection{方法稳定性}
@@ -222,6 +237,13 @@
 		|e^{\sigma \Delta t}|=|\frac{1}{1+4CFLsin^2(\frac{k\Delta x}{2})}|
 		$$
 		无论CFL取任何正值，上式均不大于1，即隐式方程是无条件稳定的。
+		下面选取一个实例进行理论和代码的互验。以显式为例，检查$CFL=0.5,0.51$时的温度值是否收敛。要实现这一点，令$N=100$，$\Delta t=0.00005,0.000051$。如图3所示，$CFL=0.5$顺利收敛，而$CFL=0.51$时程序发散（u值显示为Infinity），说明程序此时已经不稳定，成功实现理论和程序的互验。
+		\begin{figure}
+			\centering
+			\includegraphics[width=0.7\linewidth]{screenshot003}
+			\caption[]{不同CFL同一时刻的温度值对比}
+			\label{fig:screenshot003}
+		\end{figure}
 		
 		\subsection{误差分析}
 		在该节中，首先从理论分析方程的误差阶数。不论是对于显式还是隐式格式，根据其泰勒展开式可以分析，其忽略的首项（称为截断误差）可以写为
@@ -248,13 +270,31 @@
 		$$
 		u(x)=\frac{sin(l\pi x)}{(l\pi)^2\kappa}-\frac{sin(l\pi)}{(l\pi)^2\kappa}x
 		$$
-		令$u_{exact}=u(x_j)$，定义误差为$e:=max_{1\leq j \leq n}|u_{exact,j}-u_{num,j}|$，则误差可以表达为与网格分辨率和时间步有关的函数$e \approx C_1\Delta x^{\alpha}+C_2\Delta t^{\beta}$。
+		令$u_{exact}=u(x_j)$，定义误差为$e:=max_{1\leq j \leq n}|u_{exact,j}-u_{num,j}|$，则误差可以表达为与网格分辨率和时间步有关的函数$e \approx C_1\Delta x^{\alpha}+C_2\Delta t^{\beta}$。下面选取一个实例进行理论和代码的互验。本部分选取隐式方程试验（因为隐式解是无条件稳定的，可以自由调整网格分辨率和时间步的大小），选取的参数为$N=10,20,40,80,160,320,640,1280;\Delta t=1\times10^{-5};t_{end}=2.0$，而误差的阶数可以根据式$O=log_2(e_{\Delta x}/e_{\Delta x/2})$得到。数据如表1所示。可以看到，误差阶数普遍非常接近2，从而理论和代码成功实现了互验。
+		\begin{table}[h]
+			\centering
+			\caption{不同精度网格的误差及阶数}\label{tab:aStrangeTable}%添加标题 设置标签
+			\begin{tabular}{ccc}
+				\toprule  %添加表格头部粗线
+				网格分辨率N &最大误差e & 误差阶数 \\
+				\midrule  %添加表格中横线
+				
+				10	& 0.021595 & -       \\
+				20	& 0.011064 & 1.951826 \\
+				40	& 0.005594 & 1.977833393 \\
+				80	& 0.002813 & 1.988624245 \\
+				160	& 0.001410 & 1.995035461 \\
+				320	& 0.000706 & 1.997167139 \\
+				640	& 0.000353 & 2 \\
+				1280& 0.000177 & 1.994350282 \\
+				
+				\bottomrule %添加表格底部粗线
+			\end{tabular}
+		\end{table}
 		
-		\clearpage
 		
 		\section{并行化测试}
 		
-		%在结论部分我们使用仿宋体
-		LaTeX, 我看行!
+		本章节将
 		
 \end{document}

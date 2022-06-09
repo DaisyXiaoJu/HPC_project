@@ -210,7 +210,8 @@ int main(int argc, char** argv)
 	{
 		ierr = VecCopy(u, uold); CHKERRQ(ierr);
 		ierr = MatMultAdd(A, uold, f, u); CHKERRQ(ierr);
-		t = t + dt;
+		t += dt;
+		para[0] = t;
 
 		/* output u every 10 steps */
 		if ((iter + 1) % 10 == 0)
@@ -224,7 +225,7 @@ int main(int argc, char** argv)
 			status = H5Dwrite(dataset_id2, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, para);
 		}
 
-		/* If time>2s end iteration */
+		/* If time>tend end iteration */
 		if (t > tend)
 		{
 			break;

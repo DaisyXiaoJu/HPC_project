@@ -222,6 +222,7 @@ int main(int argc, char** argv)
 		ierr = KSPSolve(ksp, uold, u); CHKERRQ(ierr);
 
 		t = t + dt;
+		para[0] = t;
 		if ((iter + 1) % 10 == 0)
 		{
 			for (int i = 0; i < N; i++)
@@ -233,7 +234,7 @@ int main(int argc, char** argv)
 			status = H5Dwrite(dataset_id2, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, para);
 		}
 
-		/* If time>2s end iteration */
+		/* If time>tend end iteration */
 		if (t > tend)
 		{
 			break;

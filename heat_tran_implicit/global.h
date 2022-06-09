@@ -5,6 +5,7 @@ double dt = 0.00001;
 double L = 1.0;
 double kcond = 1.0;
 double tend = 2.0;
+int nstep = 100000;
 
 // coefs still tbd
 double g = 0.0;
