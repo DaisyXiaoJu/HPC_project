@@ -1,0 +1,67 @@
+\documentclass{article}
+\usepackage[UTF8]{ctex}
+
+%要运行该模板，LaTex需要安装CJK库以支持汉字.
+%字体大小为12像素，文档类型为article
+%如果你要写论文，就用report代替article
+%所有LaTex文档开头必须使用这句话
+%使用支持汉字的CJK包
+
+%开始CJK环境,只有在这句话之后,你才能使用汉字
+%另外,如果在Linux下,请将文件的编码格式设置成GBK
+%否则会显示乱码
+
+	%这是文章的标题
+	\title{HPC Final Project}
+	%这是文章的作者
+	\author{12132431 钟昊辰}
+	%这是文章的时间
+	%如果没有这行将显示当前时间
+	%如果不想显示时间则使用 \date{}
+	\date{2022/6/9}
+	%以上部分叫做"导言区",下面才开始写正文
+	\begin{document}
+		%先插入标题
+		\maketitle     %主要的作用是用于生成标题的作用 content contain \title \author \date
+		%再插入目录
+		
+		\tableofcontents   %主要的作用适用于生成目录的作用
+		
+		\clearpage
+		
+		\section{Problem B ：陈述}
+		考虑一维（1D）域中的热传导方程$\Omega:=(0,1)$.域的边界为$\Gamma={0,1}$.设$f$为单位体积的热源，$u$ 为温度，它是关于x和t的函数；$\rho$为密度，$c$为热容，$u_0$为初始温度，$\kappa$为传热系数，$n_x$为笛卡尔坐标系下的单位法向量.边界条件为$\Gamma_g$上规定的温度函数$g$和$\Gamma_h$上的热通量函数$h$，它们均为x和t的函数.边界$\Gamma$允许非重叠分解:$ \Gamma = \Gamma_g \cap \Gamma_h,\emptyset = \Gamma_g \cup \Gamma_h$.热传导方程可以表述如下:
+		\\
+		$
+		\rho c \frac{\partial u}{\partial t}-\kappa\frac{\partial^2 u}{\partial x^2}=f
+		$ \quad on $\Omega $
+		
+		
+		
+		\clearpage
+		
+		\section{代码构成}
+		
+		LaTex 源文件格式为普通的ASCII文件,
+		你可以使用任何文本编辑器来创建.
+		LaTex源文件不仅包括你要排版的文本, 还包括LaTex
+		所能识别的,如何排版这些文本的命令.
+		
+		\clearpage
+		
+		\section{代码测试}
+		\subsection{方法稳定性}
+		小节2.1
+		\subsection{误差分析}
+		小节2.2
+		%在结论部分我们使用仿宋体
+		LaTeX, 我看行!
+		
+		\clearpage
+		
+		\section{并行化测试}
+		
+		%在结论部分我们使用仿宋体
+		LaTeX, 我看行!
+		
+\end{document}
