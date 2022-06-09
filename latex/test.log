@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.10.20)  9 JUN 2022 18:29
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2021/W32TeX) (preloaded format=xelatex 2021.10.20)  9 JUN 2022 21:11
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -372,10 +372,16 @@ Overfull \hbox (12.09097pt too wide) detected at line 157
 [][]
  []
 
-[3] [4] [5
+[3] [4]
+Overfull \hbox (12.2951pt too wide) in paragraph at lines 164--179
+\TU/FandolSong-Regular(0)/m/n/10.53937 可 以 在 头 文 件 中 修 改。|  第 二 部 分 是 显 式 方 法 求
+ 解，|  位 于 \TU/lmr/m/n/10.53937 heat_transfer_explicit.c
+ []
 
-]
-Overfull \hbox (63.12909pt too wide) detected at line 188
+[5
+
+] [6]
+Overfull \hbox (63.12909pt too wide) detected at line 199
 \OML/cmm/m/it/10.53937 e[] \OMS/cmsy/m/n/10.53937 ^^A \OML/cmm/m/it/10.53937 e[
 ] \OT1/cmr/m/n/10.53937 = (1 \OMS/cmsy/m/n/10.53937 ^^@ \OT1/cmr/m/n/10.53937 2
 \OML/cmm/m/it/10.53937 CFL\OT1/cmr/m/n/10.53937 )\OML/cmm/m/it/10.53937 e[] \OM
@@ -387,13 +393,13 @@ r/m/n/10.53937 )
  []
 
 
-Overfull \hbox (72.15332pt too wide) detected at line 209
+Overfull \hbox (72.15332pt too wide) detected at line 220
 [][]
  []
 
-[6
+[7
 
-] [7] [8
+] [8] [9
 
 ] (./test.aux)
 
@@ -402,12 +408,12 @@ LaTeX Font Warning: Size substitutions with differences
 
  ) 
 Here is how much of TeX's memory you used:
- 6812 strings out of 476919
- 188777 string characters out of 5825423
+ 6821 strings out of 476919
+ 189502 string characters out of 5825423
  533519 words of memory out of 5000000
- 26716 multiletter control sequences out of 15000+600000
+ 26725 multiletter control sequences out of 15000+600000
  408626 words of font info for 69 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 101i,15n,104p,412b,264s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 101i,15n,104p,461b,264s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on test.xdv (8 pages, 37424 bytes).
+Output written on test.xdv (9 pages, 55660 bytes).
